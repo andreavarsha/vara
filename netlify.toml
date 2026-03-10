@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# Rate limiting: 5 requests per minute per IP (blocks abusive traffic at CDN edge)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+
+# Netlify Identity - enable in dashboard for auth
+# Netlify Blobs - automatic with free plan
+# GOOGLE_AI_API_KEY - set in Netlify dashboard -> Environment variables
