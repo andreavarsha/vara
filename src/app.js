@@ -114,7 +114,7 @@ function renderCards(container, cards, occasion, state) {
     <div class="layout">
     <h2 class="serif" style="margin-bottom: 0.5rem;">Your 2026 Looks Are Ready</h2>
     <p style="margin-bottom: 1.5rem; opacity: 0.9;">For: ${occasion}</p>
-    ${state.imageGenFailed ? '<p style="margin-bottom: 1rem; padding: 0.75rem; background: rgba(0,92,92,0.1); border-radius: 8px;">Sketch previews are temporarily paused. Your trend analysis is ready below.</p>' : ''}
+    ${/* imageGenFailed banner removed — placeholder cards are self-explanatory */ ''}
     <div class="cards-grid" id="cardsGrid"></div>
     ${state.limitReached ? `
       <div class="soft-cta">
