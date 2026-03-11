@@ -91,11 +91,11 @@ export const handler = async (event, context) => {
 
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
-    console.error('GOOGLE_AI_API_KEY not set');
-    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Server configuration error' }) };
-  }
+      console.error('GOOGLE_AI_API_KEY not set');
+      return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Server configuration error' }) };
+    }
 
-  let body;
+    let body;
     try {
       body = JSON.parse(event.body || '{}');
     } catch {
@@ -134,14 +134,14 @@ export const handler = async (event, context) => {
       return jsonResponse(429, { error: 'Trial limit reached', limitReached: true, isGuest: !userId });
     }
 
-  const silhouettes = pick5Silhouettes(occasion, ageRange);
+    const silhouettes = pick5Silhouettes(occasion, ageRange);
 
-  const ai = new GoogleGenAI({ apiKey });
-  let textCards = [];
-  let images = [];
-  let imageGenFailed = false;
+    const ai = new GoogleGenAI({ apiKey });
+    let textCards = [];
+    let images = [];
+    let imageGenFailed = false;
 
-  const textPrompt = `You are a fashion analyst. For each of these 5 dress silhouettes, provide exactly:
+    const textPrompt = `You are a fashion analyst. For each of these 5 dress silhouettes, provide exactly:
 1. styleAnalysis: 2 sentences explaining why this dress is trending in March 2026.
 2. trendEvidence: 2-4 specific 2026 trend keywords (e.g., "Brut Denim," "90s Redux," "Quiet Luxury").
 
@@ -152,92 +152,81 @@ ${mat ? `Material context: ${mat.system_instruction}` : ''}
 
 Return a JSON array of 5 objects: [{ "silhouette": "...", "styleAnalysis": "...", "trendEvidence": ["..."] }]`;
 
-  try {
-    const textResp = await ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: textPrompt,
-      config: { maxOutputTokens: 1024, responseMimeType: 'application/json' },
-    });
+    try {
+      const textResp = await ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: textPrompt,
+        config: { maxOutputTokens: 1024, responseMimeType: 'application/json' },
+      });
 
-    const textStr = textResp?.text?.trim() || '';
-    if (!textStr) {
-      console.warn('AI returned empty text response, using defaults');
+      const textStr = textResp?.text?.trim() || '';
+      if (!textStr) {
+        console.warn('AI returned empty text response, using defaults');
+        textCards = silhouettes.map((s) => ({
+          silhouette: s,
+          styleAnalysis: 'This dress aligns with March 2026 fashion trends.',
+          trendEvidence: ['2026 Trends', 'Editorial Style'],
+        }));
+      } else {
+        const start = textStr.indexOf('[');
+        const end = textStr.lastIndexOf(']') + 1;
+        const jsonStr = start >= 0 && end > start ? textStr.slice(start, end) : '[]';
+        try {
+          textCards = JSON.parse(jsonStr);
+        } catch (parseErr) {
+          console.error('Failed to parse AI JSON:', jsonStr);
+          throw parseErr;
+        }
+      }
+
+      while (textCards.length < 5) {
+        textCards.push({
+          silhouette: silhouettes[textCards.length] || 'Dress',
+          styleAnalysis: 'This design reflects current March 2026 trends.',
+          trendEvidence: ['Quiet Luxury', '2026 Trends'],
+        });
+      }
+    } catch (err) {
+      console.error('Text generation failed:', err);
       textCards = silhouettes.map((s) => ({
         silhouette: s,
         styleAnalysis: 'This dress aligns with March 2026 fashion trends.',
         trendEvidence: ['2026 Trends', 'Editorial Style'],
       }));
-    } else {
-      const start = textStr.indexOf('[');
-      const end = textStr.lastIndexOf(']') + 1;
-      const jsonStr = start >= 0 && end > start ? textStr.slice(start, end) : '[]';
-      try {
-        textCards = JSON.parse(jsonStr);
-      } catch (parseErr) {
-        console.error('Failed to parse AI JSON:', jsonStr);
-        throw parseErr;
-      }
     }
 
-    while (textCards.length < 5) {
-      textCards.push({
-        silhouette: silhouettes[textCards.length] || 'Dress',
-        styleAnalysis: 'This design reflects current March 2026 trends.',
-        trendEvidence: ['Quiet Luxury', '2026 Trends'],
+
+
+
+  // Generate all 5 images in parallel to avoid function timeout
+  const imageResults = await Promise.allSettled(
+    silhouettes.map((sil) => {
+      const prompt = buildImagePrompt(sil, occ.system_instruction, age.system_instruction, mat?.system_instruction);
+      return ai.models.generateContent({
+        model: IMAGE_MODEL,
+        contents: prompt,
+        config: { responseModalities: ['image'] },
+      }).then((resp) => {
+        const parts = resp?.candidates?.[0]?.content?.parts || [];
+        const imgPart = parts.find((p) => p.inlineData?.data);
+        if (imgPart) {
+          return { silhouette: sil, base64: imgPart.inlineData.data, mimeType: imgPart.inlineData.mimeType || 'image/jpeg' };
+        }
+        console.warn(`Image for ${sil}: no image data in response`);
+        return { silhouette: sil, base64: null, error: true };
       });
-    }
-  } catch (err) {
-    console.error('Text generation failed:', err);
-    textCards = silhouettes.map((s) => ({
-      silhouette: s,
-      styleAnalysis: 'This dress aligns with March 2026 fashion trends.',
-      trendEvidence: ['2026 Trends', 'Editorial Style'],
-    }));
-  }
-
-  const imgPromptBase = buildImagePrompt(
-    '',
-    occ.system_instruction,
-    age.system_instruction,
-    mat?.system_instruction
+    })
   );
 
-  for (let i = 0; i < 5; i++) {
-    const sil = silhouettes[i];
-    const prompt = buildImagePrompt(sil, occ.system_instruction, age.system_instruction, mat?.system_instruction);
+  images = imageResults.map((result, i) => {
+    if (result.status === 'fulfilled') return result.value;
+    console.error(`Image ${i} failed:`, result.reason?.message);
+    imageGenFailed = true;
+    return { silhouette: silhouettes[i], base64: null, error: true };
+  });
 
-    try {
-      const resp = await ai.models.generateImages({
-        model: IMAGE_MODEL,
-        prompt,
-        config: { numberOfImages: 1, outputMimeType: 'image/jpeg' },
-      });
+  if (images.some((img) => img.error)) imageGenFailed = true;
 
-      const imgData = resp?.generatedImages?.[0]?.image?.imageBytes;
-      if (imgData) {
-        images.push({
-          silhouette: sil,
-          base64: imgData,
-          mimeType: 'image/jpeg',
-        });
-      } else {
-        console.warn(`Image ${i}: no image bytes returned`, resp?.generatedImages?.[0]?.raiFilteredReason);
-        images.push({ silhouette: sil, base64: null, error: true });
-        imageGenFailed = true;
-      }
-    } catch (err) {
-      console.error(`Image ${i} failed:`, err.message);
-      if (err.status === 402 || err.message?.includes('quota') || err.message?.includes('billing')) {
-        imageGenFailed = true;
-        for (let j = i; j < 5; j++) {
-          images.push({ silhouette: silhouettes[j], base64: null, error: true });
-        }
-        break;
-      }
-      images.push({ silhouette: sil, base64: null, error: true });
-      imageGenFailed = true;
-    }
-  }
 
     userData.count = (userData.count || 0) + 1;
     if (store) {
@@ -249,19 +238,19 @@ Return a JSON array of 5 objects: [{ "silhouette": "...", "styleAnalysis": "..."
     }
 
     const cards = silhouettes.map((sil, i) => {
-    const tc = textCards[i] || {};
-    const img = images[i] || {};
-    return {
-      silhouette: tc.silhouette || sil,
-      styleAnalysis: tc.styleAnalysis || '',
-      trendEvidence: tc.trendEvidence || [],
-      imageBase64: img.base64 || null,
-      imageError: img.error || false,
-      occasion,
-      ageRange,
-      material: material || null,
-    };
-  });
+      const tc = textCards[i] || {};
+      const img = images[i] || {};
+      return {
+        silhouette: tc.silhouette || sil,
+        styleAnalysis: tc.styleAnalysis || '',
+        trendEvidence: tc.trendEvidence || [],
+        imageBase64: img.base64 || null,
+        imageError: img.error || false,
+        occasion,
+        ageRange,
+        material: material || null,
+      };
+    });
 
     return jsonResponse(200, {
       cards,
