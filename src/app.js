@@ -34,7 +34,7 @@ function renderForm(container, state) {
     <section class="form-section form-glass">
       <span class="brand-year">2026</span>
       <h1 class="brand-title">VarA</h1>
-      <p class="brand-tagline">Your 2026 dress ideas. Three questions. Five silhouettes.</p>
+      <p class="brand-tagline">Three questions. Four designs. All yours — for 2026.</p>
       <div class="form-fields">
         <div>
           <label class="form-label">What's the occasion?</label>
@@ -112,16 +112,16 @@ function renderCards(container, cards, occasion, state) {
 
   container.innerHTML = `
     <div class="layout">
-    <h2 class="serif" style="margin-bottom: 0.5rem;">Your 2026 Looks Are Ready</h2>
-    <p style="margin-bottom: 1.5rem; opacity: 0.9;">For: ${occasion}</p>
+    <h2 class="serif cards-results-header">Your 2026 Designs Are Ready</h2>
+    <p class="cards-results-subhead">For: ${occasion}</p>
     ${/* imageGenFailed banner removed — placeholder cards are self-explanatory */ ''}
     <div class="cards-grid" id="cardsGrid"></div>
     ${state.limitReached ? `
       <div class="soft-cta">
-        <p class="serif">You've curated 3 concept boards. More is coming.</p>
+        <p class="serif">You've explored 3 concept boards. More is coming.</p>
         ${isLoggedIn ? '<a href="#saved" class="btn btn-secondary">View My Saved Designs</a>' : ''}
       </div>
-    ` : '<button class="btn btn-primary" id="generateAgain" style="margin-top: 1.5rem;">Generate Again</button>'}
+    ` : '<button class="btn btn-primary" id="generateAgain" style="margin-top: 1.5rem;">Generate New Designs</button>'}
     </div>
   `;
 
@@ -142,7 +142,7 @@ function renderCards(container, cards, occasion, state) {
         </button>
       </div>
       <div class="card-body">
-        <span class="card-badge">${card.silhouette}</span>
+        <span class="card-badge">Design ${i + 1} — ${card.silhouette}</span>
         <div class="card-occasion">For: ${occasion}</div>
         <p class="card-analysis">${card.styleAnalysis || ''}</p>
         <div class="card-trends">

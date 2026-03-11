@@ -62,9 +62,10 @@ export const handler = async (event) => {
 
     if (!occ || !age) return jsonResponse(400, { error: 'Invalid occasion or age range' });
 
-    const prompt = `Professional pencil and watercolor fashion sketch, white background, editorial illustration.
-Design a ${silhouette} dress. ${occ.system_instruction} ${age.system_instruction}${mat ? ` ${mat.system_instruction}` : ''}
-Dress only. No trousers, no jumpsuits, no two-piece, no separates.`;
+    const prompt = `Fashion design sketch illustration. White background. Full-length dress drawn from head to hem, centred in the frame with generous white space on all sides.
+Style: editorial pencil and soft watercolour wash.
+Design: a ${silhouette} dress. ${occ.system_instruction} ${age.system_instruction}${mat ? ` ${mat.system_instruction}` : ''}
+Rules: Show ONLY the dress — no background, no other clothing pieces. The complete dress must be fully visible within the canvas, nothing cropped.`;
 
     const ai = new GoogleGenAI({ apiKey });
 

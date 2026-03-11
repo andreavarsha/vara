@@ -40,15 +40,15 @@ function pick5Silhouettes(occasion) {
   const preferred = prefs[occasion] || all;
   const selected = [];
   for (const s of preferred) {
-    if (selected.length >= 5) break;
+    if (selected.length >= 4) break;
     if (all.includes(s)) selected.push(s);
   }
-  while (selected.length < 5) {
+  while (selected.length < 4) {
     const remaining = all.filter((s) => !selected.includes(s));
     if (remaining.length === 0) break;
     selected.push(remaining[0]);
   }
-  return selected.slice(0, 5);
+  return selected.slice(0, 4);
 }
 
 const corsHeaders = {
@@ -125,8 +125,8 @@ export const handler = async (event, context) => {
     }));
 
     try {
-      const textPrompt = `You are a fashion analyst. For each of these 5 dress silhouettes, provide exactly:
-1. styleAnalysis: 2 sentences explaining why this dress is trending in March 2026.
+      const textPrompt = `You are a fashion analyst. For each of these 4 dress silhouettes, provide exactly:
+1. styleAnalysis: 2 sentences explaining why this design is trending in 2026.
 2. trendEvidence: 2-4 specific 2026 trend keywords (e.g., "Brut Denim," "90s Redux," "Quiet Luxury").
 
 Silhouettes: ${silhouettes.join(', ')}
@@ -134,7 +134,7 @@ Occasion context: ${occ.system_instruction}
 Age context: ${age.system_instruction}
 ${mat ? `Material context: ${mat.system_instruction}` : ''}
 
-Return a JSON array of 5 objects: [{ "silhouette": "...", "styleAnalysis": "...", "trendEvidence": ["..."] }]`;
+Return a JSON array of 4 objects: [{ "silhouette": "...", "styleAnalysis": "...", "trendEvidence": ["..."] }]`;
 
       const resp = await ai.models.generateContent({
         model: TEXT_MODEL,
@@ -148,7 +148,7 @@ Return a JSON array of 5 objects: [{ "silhouette": "...", "styleAnalysis": "..."
       const parsed = start >= 0 && end > start ? JSON.parse(raw.slice(start, end)) : [];
       if (parsed.length > 0) {
         textCards = parsed;
-        while (textCards.length < 5) {
+        while (textCards.length < 4) {
           textCards.push({ silhouette: silhouettes[textCards.length] || 'Dress', styleAnalysis: 'This design reflects current 2026 trends.', trendEvidence: ['Quiet Luxury', '2026 Trends'] });
         }
       }
@@ -173,7 +173,6 @@ Return a JSON array of 5 objects: [{ "silhouette": "...", "styleAnalysis": "..."
         occasion,
         ageRange,
         material: material || null,
-        // Pass prompt context so the frontend can call generate-image
         imagePromptContext: { occasion, ageRange, material: material || null, silhouette: sil },
       };
     });
