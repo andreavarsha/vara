@@ -136,9 +136,7 @@ function renderCards(container, cards, occasion, state) {
     cardEl.className = 'card glass';
     cardEl.innerHTML = `
       <div class="card-image-wrap">
-        ${card.imageBase64
-          ? `<img src="data:image/png;base64,${card.imageBase64}" alt="${card.silhouette}" />`
-          : PLACEHOLDER_SVG}
+        ${PLACEHOLDER_SVG}
         <button class="heart-btn ${isSaved ? 'filled' : ''}" data-card-id="${card.id || i}" data-silhouette="${card.silhouette}" aria-label="Save design">
           ${heartSvg}
         </button>
@@ -152,6 +150,33 @@ function renderCards(container, cards, occasion, state) {
         </div>
       </div>
     `;
+
+    // Progressively load image in background
+    const imgWrap = cardEl.querySelector('.card-image-wrap');
+    if (card.imagePromptContext) {
+      const imgEl = document.createElement('img');
+      imgEl.alt = card.silhouette;
+      imgEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;opacity:0;transition:opacity 0.4s';
+      imgWrap.style.position = 'relative';
+      imgWrap.appendChild(imgEl);
+
+      fetch('/.netlify/functions/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(card.imagePromptContext),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.base64) {
+            imgEl.src = `data:${data.mimeType || 'image/jpeg'};base64,${data.base64}`;
+            imgEl.onload = () => {
+              imgWrap.querySelector('.placeholder-dress')?.remove();
+              imgEl.style.opacity = '1';
+            };
+          }
+        })
+        .catch(() => { /* keep placeholder on error */ });
+    }
 
     const heartBtn = cardEl.querySelector('.heart-btn');
     heartBtn.addEventListener('click', () => state.onHeartClick?.(card, heartBtn, cardEl));

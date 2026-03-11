@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai/node';
 import { getStore } from '@netlify/blobs';
-// Note: netlify dev automatically injects .env variables — no dotenv needed here.
+// netlify dev automatically injects .env — no dotenv needed
 
 const SCHEMA = {
   occasions: [
@@ -27,18 +27,17 @@ const SCHEMA = {
   silhouettes: ['A-Line', 'Wrap', 'Column', 'Slip Dress', 'Bubble Hem', 'Midi Flare', 'Shirt Dress'],
 };
 
-const IMAGE_MODEL = 'gemini-3.1-flash-image-preview';
-const TEXT_MODEL = 'gemini-3.1-flash-lite';
+const TEXT_MODEL = 'gemini-3.1-flash-lite-preview';
 
-function pick5Silhouettes(occasion, ageRange) {
+function pick5Silhouettes(occasion) {
   const all = [...SCHEMA.silhouettes];
-  const occasionPrefs = {
+  const prefs = {
     'Date Night': ['Column', 'Slip Dress', 'Wrap', 'Midi Flare', 'A-Line'],
     'Girls Night': ['Bubble Hem', 'Column', 'Slip Dress', 'A-Line', 'Wrap'],
     'Casual': ['A-Line', 'Wrap', 'Midi Flare', 'Shirt Dress', 'Slip Dress'],
     'Vintage': ['Slip Dress', 'Bubble Hem', 'Midi Flare', 'Wrap', 'A-Line'],
   };
-  const preferred = occasionPrefs[occasion] || all;
+  const preferred = prefs[occasion] || all;
   const selected = [];
   for (const s of preferred) {
     if (selected.length >= 5) break;
@@ -50,13 +49,6 @@ function pick5Silhouettes(occasion, ageRange) {
     selected.push(remaining[0]);
   }
   return selected.slice(0, 5);
-}
-
-function buildImagePrompt(silhouette, occasionInst, ageInst, materialInst) {
-  const base = `Professional pencil and watercolor fashion sketch, white background, editorial illustration.
-Design a ${silhouette} dress. ${occasionInst} ${ageInst}${materialInst ? ` ${materialInst}` : ''}
-Dress only. No trousers, no jumpsuits, no two-piece, no separates.`;
-  return base;
 }
 
 const corsHeaders = {
@@ -82,17 +74,13 @@ function jsonResponse(statusCode, data) {
 
 export const handler = async (event, context) => {
   try {
-    if (event.httpMethod === 'OPTIONS') {
-      return { statusCode: 204, headers: corsHeaders, body: '' };
-    }
-    if (event.httpMethod !== 'POST') {
-      return jsonResponse(405, { error: 'Method Not Allowed' });
-    }
+    if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: corsHeaders, body: '' };
+    if (event.httpMethod !== 'POST') return jsonResponse(405, { error: 'Method Not Allowed' });
 
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
       console.error('GOOGLE_AI_API_KEY not set');
-      return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'Server configuration error' }) };
+      return jsonResponse(500, { error: 'Server configuration error' });
     }
 
     let body;
@@ -106,40 +94,38 @@ export const handler = async (event, context) => {
     const { occasion, ageRange, material, guestId, userId: bodyUserId } = body;
     const userId = serverUser?.id || bodyUserId;
 
-    if (!occasion || !ageRange) {
-      return jsonResponse(400, { error: 'Occasion and age range are required' });
-    }
+    if (!occasion || !ageRange) return jsonResponse(400, { error: 'Occasion and age range are required' });
 
     const occ = SCHEMA.occasions.find((o) => o.value === occasion);
     const age = SCHEMA.age_ranges.find((a) => a.value === ageRange);
     const mat = material && material !== 'No preference' ? SCHEMA.materials.find((m) => m.value === material) : null;
 
-    if (!occ || !age) {
-      return jsonResponse(400, { error: 'Invalid occasion or age range' });
-    }
+    if (!occ || !age) return jsonResponse(400, { error: 'Invalid occasion or age range' });
 
+    // Track usage in Blobs (optional — falls back gracefully)
     const userKey = userId || `guest_${guestId}`;
-    let userData;
+    let userData = { count: 0, savedCards: [] };
     let store = null;
     try {
       store = getStore('vara-users');
       const raw = await store.get(userKey);
       userData = raw ? JSON.parse(raw) : { count: 0, savedCards: [] };
-    } catch (storeErr) {
-      console.error('Blobs store error (using fallback):', storeErr.message);
-      userData = { count: 0, savedCards: [] };
+    } catch (e) {
+      console.warn('Blobs unavailable, using in-memory fallback:', e.message);
     }
 
-    // No generation limits — unlimited for all users
-
-    const silhouettes = pick5Silhouettes(occasion, ageRange);
-
+    const silhouettes = pick5Silhouettes(occasion);
     const ai = new GoogleGenAI({ apiKey });
-    let textCards = [];
-    let images = [];
-    let imageGenFailed = false;
 
-    const textPrompt = `You are a fashion analyst. For each of these 5 dress silhouettes, provide exactly:
+    // --- TEXT GENERATION ONLY (images fetched separately per card) ---
+    let textCards = silhouettes.map((s) => ({
+      silhouette: s,
+      styleAnalysis: 'This dress aligns with March 2026 fashion trends.',
+      trendEvidence: ['2026 Trends', 'Editorial Style'],
+    }));
+
+    try {
+      const textPrompt = `You are a fashion analyst. For each of these 5 dress silhouettes, provide exactly:
 1. styleAnalysis: 2 sentences explaining why this dress is trending in March 2026.
 2. trendEvidence: 2-4 specific 2026 trend keywords (e.g., "Brut Denim," "90s Redux," "Quiet Luxury").
 
@@ -150,116 +136,57 @@ ${mat ? `Material context: ${mat.system_instruction}` : ''}
 
 Return a JSON array of 5 objects: [{ "silhouette": "...", "styleAnalysis": "...", "trendEvidence": ["..."] }]`;
 
-    try {
-      const textResp = await ai.models.generateContent({
+      const resp = await ai.models.generateContent({
         model: TEXT_MODEL,
         contents: textPrompt,
         config: { maxOutputTokens: 1024, responseMimeType: 'application/json' },
       });
 
-      const textStr = textResp?.text?.trim() || '';
-      if (!textStr) {
-        console.warn('AI returned empty text response, using defaults');
-        textCards = silhouettes.map((s) => ({
-          silhouette: s,
-          styleAnalysis: 'This dress aligns with March 2026 fashion trends.',
-          trendEvidence: ['2026 Trends', 'Editorial Style'],
-        }));
-      } else {
-        const start = textStr.indexOf('[');
-        const end = textStr.lastIndexOf(']') + 1;
-        const jsonStr = start >= 0 && end > start ? textStr.slice(start, end) : '[]';
-        try {
-          textCards = JSON.parse(jsonStr);
-        } catch (parseErr) {
-          console.error('Failed to parse AI JSON:', jsonStr);
-          throw parseErr;
+      const raw = resp?.text?.trim() || '';
+      const start = raw.indexOf('[');
+      const end = raw.lastIndexOf(']') + 1;
+      const parsed = start >= 0 && end > start ? JSON.parse(raw.slice(start, end)) : [];
+      if (parsed.length > 0) {
+        textCards = parsed;
+        while (textCards.length < 5) {
+          textCards.push({ silhouette: silhouettes[textCards.length] || 'Dress', styleAnalysis: 'This design reflects current 2026 trends.', trendEvidence: ['Quiet Luxury', '2026 Trends'] });
         }
-      }
-
-      while (textCards.length < 5) {
-        textCards.push({
-          silhouette: silhouettes[textCards.length] || 'Dress',
-          styleAnalysis: 'This design reflects current March 2026 trends.',
-          trendEvidence: ['Quiet Luxury', '2026 Trends'],
-        });
       }
     } catch (err) {
-      console.error('Text generation failed:', err);
-      textCards = silhouettes.map((s) => ({
-        silhouette: s,
-        styleAnalysis: 'This dress aligns with March 2026 fashion trends.',
-        trendEvidence: ['2026 Trends', 'Editorial Style'],
-      }));
+      console.error('Text generation failed:', err.message);
+      // textCards already set to defaults above
     }
 
-
-
-
-  // Generate all 5 images in parallel
-  const imageResults = await Promise.allSettled(
-    silhouettes.map((sil) => {
-      const prompt = buildImagePrompt(sil, occ.system_instruction, age.system_instruction, mat?.system_instruction);
-      return ai.models.generateContent({
-        model: IMAGE_MODEL,
-        contents: prompt,
-        config: { responseModalities: ['image'] },
-      }).then((resp) => {
-        const parts = resp?.candidates?.[0]?.content?.parts || [];
-        const imgPart = parts.find((p) => p.inlineData?.data);
-        if (imgPart) {
-          return { silhouette: sil, base64: imgPart.inlineData.data, mimeType: imgPart.inlineData.mimeType || 'image/jpeg' };
-        }
-        console.warn(`Image for ${sil}: no image data in response`);
-        return { silhouette: sil, base64: null, error: true };
-      });
-    })
-  );
-
-  images = imageResults.map((result, i) => {
-    if (result.status === 'fulfilled') return result.value;
-    console.error(`Image ${i} failed:`, result.reason?.message);
-    imageGenFailed = true;
-    return { silhouette: silhouettes[i], base64: null, error: true };
-  });
-
-  if (images.some((img) => img.error)) imageGenFailed = true;
-
-
+    // Increment usage count
     userData.count = (userData.count || 0) + 1;
     if (store) {
-      try {
-        await store.set(userKey, JSON.stringify(userData));
-      } catch (storeErr) {
-        console.error('Blobs set error:', storeErr.message);
-      }
+      try { await store.set(userKey, JSON.stringify(userData)); } catch (e) { console.warn('Blobs write failed:', e.message); }
     }
 
+    // Build cards WITHOUT images — images will be fetched separately per card
     const cards = silhouettes.map((sil, i) => {
       const tc = textCards[i] || {};
-      const img = images[i] || {};
       return {
         silhouette: tc.silhouette || sil,
         styleAnalysis: tc.styleAnalysis || '',
         trendEvidence: tc.trendEvidence || [],
-        imageBase64: img.base64 || null,
-        imageError: img.error || false,
         occasion,
         ageRange,
         material: material || null,
+        // Pass prompt context so the frontend can call generate-image
+        imagePromptContext: { occasion, ageRange, material: material || null, silhouette: sil },
       };
     });
 
     return jsonResponse(200, {
       cards,
-      imageGenFailed,
       generationCount: userData.count,
       limitReached: false,
+      imageGenFailed: false,
     });
+
   } catch (err) {
     console.error('Generate function error:', err);
-    return jsonResponse(500, {
-      error: err.message || 'Something went wrong. Please try again.',
-    });
+    return jsonResponse(500, { error: err.message || 'Something went wrong. Please try again.' });
   }
 };
