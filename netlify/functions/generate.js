@@ -102,16 +102,29 @@ export const handler = async (event, context) => {
 
     if (!occ || !age) return jsonResponse(400, { error: 'Invalid occasion or age range' });
 
-    // Track usage in Blobs (optional — falls back gracefully)
-    const userKey = userId || `guest_${guestId}`;
-    let userData = { count: 0, savedCards: [] };
+    // --- IP-based rate limiting (max 3 generations per IP) ---
+    const MAX_PER_IP = 3;
+    const clientIp =
+      event.headers['x-nf-client-connection-ip'] ||
+      event.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      'unknown';
+
+    let ipData = { count: 0 };
     let store = null;
     try {
-      store = getStore('vara-users');
-      const raw = await store.get(userKey);
-      userData = raw ? JSON.parse(raw) : { count: 0, savedCards: [] };
+      store = getStore('vara-ip-limits');
+      const raw = await store.get(clientIp);
+      ipData = raw ? JSON.parse(raw) : { count: 0 };
     } catch (e) {
-      console.warn('Blobs unavailable, using in-memory fallback:', e.message);
+      console.warn('Blobs unavailable for IP limiting:', e.message);
+      // If Blobs isn't available, we can't enforce limits — allow the request
+    }
+
+    if (store && ipData.count >= MAX_PER_IP) {
+      return jsonResponse(429, {
+        error: 'You have used your 3 free generations. Sign in to continue.',
+        limitReached: true,
+      });
     }
 
     const silhouettes = pick5Silhouettes(occasion);
@@ -157,10 +170,10 @@ Return a JSON array of 4 objects: [{ "silhouette": "...", "styleAnalysis": "..."
       // textCards already set to defaults above
     }
 
-    // Increment usage count
-    userData.count = (userData.count || 0) + 1;
+    // Increment IP count after successful generation
+    ipData.count = (ipData.count || 0) + 1;
     if (store) {
-      try { await store.set(userKey, JSON.stringify(userData)); } catch (e) { console.warn('Blobs write failed:', e.message); }
+      try { await store.set(clientIp, JSON.stringify(ipData)); } catch (e) { console.warn('Blobs write failed:', e.message); }
     }
 
     // Build cards WITHOUT images — images will be fetched separately per card
@@ -179,8 +192,9 @@ Return a JSON array of 4 objects: [{ "silhouette": "...", "styleAnalysis": "..."
 
     return jsonResponse(200, {
       cards,
-      generationCount: userData.count,
-      limitReached: false,
+      generationCount: ipData.count,
+      generationsLeft: Math.max(0, MAX_PER_IP - ipData.count),
+      limitReached: ipData.count >= MAX_PER_IP,
       imageGenFailed: false,
     });
 
