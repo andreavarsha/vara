@@ -161,9 +161,10 @@ function renderCards(container, cards, occasion, state) {
     if (card.imagePromptContext) {
       const imgEl = document.createElement('img');
       imgEl.alt = card.silhouette;
-      imgEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;opacity:0;transition:opacity 0.4s';
+      imgEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;padding:8px;border-radius:inherit;opacity:0;transition:opacity 0.4s';
       imgWrap.style.position = 'relative';
       imgWrap.appendChild(imgEl);
+      imgWrap.classList.add('img-loading'); // shimmer while fetching
 
       fetch('/.netlify/functions/generate-image', {
         method: 'POST',
@@ -172,6 +173,7 @@ function renderCards(container, cards, occasion, state) {
       })
         .then((r) => r.json())
         .then((data) => {
+          imgWrap.classList.remove('img-loading');
           if (data.base64) {
             imgEl.src = `data:${data.mimeType || 'image/jpeg'};base64,${data.base64}`;
             imgEl.onload = () => {
@@ -180,7 +182,9 @@ function renderCards(container, cards, occasion, state) {
             };
           }
         })
-        .catch(() => { /* keep placeholder on error */ });
+        .catch(() => {
+          imgWrap.classList.remove('img-loading'); // keep placeholder on error
+        });
     }
 
     const heartBtn = cardEl.querySelector('.heart-btn');

@@ -292,7 +292,24 @@ select:active { transform: scale(0.99); }
 
 .loading-sub { font-size: 0.9rem; opacity: 0.6; }
 
-/* ─── Cards grid — 4 across, no scroll ────────────────── */
+/* Image loading shimmer — plays while generate-image fetches */
+@keyframes img-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.img-loading {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 800px 100%;
+  animation: img-shimmer 1.6s ease-in-out infinite;
+}
+
+/* Cards grid — 4 across, no scroll */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
