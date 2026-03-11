@@ -205,7 +205,7 @@ Return a JSON array of 5 objects: [{ "silhouette": "...", "styleAnalysis": "..."
       return ai.models.generateContent({
         model: IMAGE_MODEL,
         contents: prompt,
-        config: { responseModalities: ['image'] },
+        config: { responseModalities: ['text', 'image'] },
       }).then((resp) => {
         const parts = resp?.candidates?.[0]?.content?.parts || [];
         const imgPart = parts.find((p) => p.inlineData?.data);
