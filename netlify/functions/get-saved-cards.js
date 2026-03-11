@@ -35,15 +35,24 @@ export const handler = async (event, context) => {
     };
   }
 
-  const store = getStore('vara-users');
-  const userKey = `user_${userId}`;
-  const userDataRaw = await store.get(userKey);
-  const userData = userDataRaw ? JSON.parse(userDataRaw) : { savedCards: [] };
-  const savedCards = userData.savedCards || [];
+  try {
+    const store = getStore('vara-users');
+    const userKey = `user_${userId}`;
+    const userDataRaw = await store.get(userKey);
+    const userData = userDataRaw ? JSON.parse(userDataRaw) : { savedCards: [] };
+    const savedCards = userData.savedCards || [];
 
-  return {
-    statusCode: 200,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ savedCards }),
-  };
+    return {
+      statusCode: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ savedCards }),
+    };
+  } catch (err) {
+    console.error('Blobs error in get-saved-cards:', err.message);
+    return {
+      statusCode: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Storage unavailable. Please try again.' }),
+    };
+  }
 };

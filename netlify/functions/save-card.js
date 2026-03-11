@@ -66,35 +66,44 @@ export const handler = async (event, context) => {
     }
   }
 
-  const store = getStore('vara-users');
-  const userKey = `user_${userId}`;
-  let userData = await store.get(userKey);
-  userData = userData ? JSON.parse(userData) : { count: 0, savedCards: [] };
-  userData.savedCards = userData.savedCards || [];
+  let userData;
+  try {
+    const store = getStore('vara-users');
+    const userKey = `user_${userId}`;
+    const raw = await store.get(userKey);
+    userData = raw ? JSON.parse(raw) : { count: 0, savedCards: [] };
+    userData.savedCards = userData.savedCards || [];
 
-  if (action === 'save') {
-    const savedCard = {
-      id: card.id || `${Date.now()}_${card.silhouette}`,
-      savedAt: new Date().toISOString(),
-      ...card,
-    };
-    userData.savedCards.unshift(savedCard);
-  } else if (action === 'unsave') {
-    const id = card.id;
-    userData.savedCards = userData.savedCards.filter((c) => c.id !== id);
-  } else {
+    if (action === 'save') {
+      const savedCard = {
+        id: card.id || `${Date.now()}_${card.silhouette}`,
+        savedAt: new Date().toISOString(),
+        ...card,
+      };
+      userData.savedCards.unshift(savedCard);
+    } else if (action === 'unsave') {
+      userData.savedCards = userData.savedCards.filter((c) => c.id !== card.id);
+    } else {
+      return {
+        statusCode: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'action must be save or unsave' }),
+      };
+    }
+
+    await store.set(userKey, JSON.stringify(userData));
+
     return {
-      statusCode: 400,
+      statusCode: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'action must be save or unsave' }),
+      body: JSON.stringify({ savedCards: userData.savedCards }),
+    };
+  } catch (err) {
+    console.error('Blobs error in save-card:', err.message);
+    return {
+      statusCode: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Storage unavailable. Please try again.' }),
     };
   }
-
-  await store.set(userKey, JSON.stringify(userData));
-
-  return {
-    statusCode: 200,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ savedCards: userData.savedCards }),
-  };
 };
