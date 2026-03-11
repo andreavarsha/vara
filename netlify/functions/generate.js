@@ -105,9 +105,6 @@ export const handler = async (event, context) => {
     const serverUser = getUserFromContext(event, context);
     const { occasion, ageRange, material, guestId, userId: bodyUserId } = body;
     const userId = serverUser?.id || bodyUserId;
-    const userEmail = serverUser?.email;
-    const ADMIN_EMAILS = ['varsha.francisco@gmail.com'];
-    const isAdmin = ADMIN_EMAILS.includes(userEmail);
 
     if (!occasion || !ageRange) {
       return jsonResponse(400, { error: 'Occasion and age range are required' });
@@ -133,10 +130,7 @@ export const handler = async (event, context) => {
       userData = { count: 0, savedCards: [] };
     }
 
-    const maxGen = isAdmin ? Infinity : userId ? 3 : 1;
-    if (userData.count >= maxGen) {
-      return jsonResponse(429, { error: 'Trial limit reached', limitReached: true, isGuest: !userId });
-    }
+    // No generation limits — unlimited for all users
 
     const silhouettes = pick5Silhouettes(occasion, ageRange);
 
