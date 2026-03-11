@@ -3,6 +3,10 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[functions]
+  node_bundler = "esbuild"
+
+
 # Rate limiting: 5 requests per minute per IP (blocks abusive traffic at CDN edge)
 [[headers]]
   for = "/*"
