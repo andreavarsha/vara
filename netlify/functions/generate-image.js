@@ -5,17 +5,17 @@ const IMAGE_MODEL = 'gemini-3.1-flash-image-preview';
 
 const SCHEMA = {
   occasions: [
-    { value: 'Casual', system_instruction: "Focus on 'Lightweight Structure' and 'Quiet Luxury'. Use organic cotton poplins or linens for breathable, clean silhouettes like the midi wrap or shift dress." },
-    { value: 'Date Night', system_instruction: "Apply the '90s Redux' and 'Romantic Sensuality' trends. Prioritize open backs, plunging necklines, and tactile fabrics like satin or lace." },
-    { value: 'Vintage', system_instruction: "Blend 20s/30s 'Retro-Fit Florals' with 80s 'Exaggerated Proportions'. Think lace-trimmed slip dresses or dresses with bubble hems and puff sleeves." },
-    { value: 'Girls Night', system_instruction: "Execute 'Maximalist Energy' and 'Bold Block Colours'. Focus on high-visibility dresses: bodycon styles, metallic sheens, or vibrant 'Primary Palettes'." },
+    { value: 'Casual', system_instruction: "Design a relaxed yet polished everyday dress. Think clean silhouettes in neutral or earthy tones — ivory, sand, sage, warm grey. Breathable fabrics, minimal detailing." },
+    { value: 'Date Night', system_instruction: "Design a sophisticated, sensual evening dress. Think satin, lace or structured crepe in deep jewel tones — burgundy, midnight navy, champagne, or classic black. Open backs, delicate straps, or a subtle slit are welcome." },
+    { value: 'Vintage', system_instruction: "Design a vintage-inspired dress that feels nostalgic but wearable today. Think 1970s wrap silhouettes, 1950s full skirts, or 1960s shift dresses. Soft florals or warm earthy tones." },
+    { value: 'Girls Night', system_instruction: "Design a chic, confidence-boosting night-out dress. Think fitted bodycon or mini lengths in satin, velvet or sequin. Solid jewel tones — emerald, deep red, cobalt, champagne — or subtle metallic finishes. NOT loud prints, NOT multiple clashing colours." },
   ],
   age_ranges: [
-    { value: 'Early Teens', system_instruction: "Focus on 'Whimsical Volume' and 'Sporty References'. Use playful bubble hems, tiered ruffles, and oversized, comfy silhouettes." },
-    { value: 'Late Teens', system_instruction: "Prioritize 'Expressive Patterns' and 'Y2K Revival'. Design with bold dots, 'Little House on the Prairie' ditsy florals, and daring cut-outs." },
-    { value: '20s', system_instruction: "Blend 'Minimalist Sophistication' with 'Modern Flare'. Focus on versatile day-to-night slip dresses and sleek column silhouettes." },
-    { value: '30s', system_instruction: "Focus on 'Timeless Leadership' and 'Material Honesty'. Prioritize high-quality tailoring, structured cottons, and refined geometric necklines." },
-    { value: '40+', system_instruction: "Master 'Quiet Luxury' and 'Refined Elegance'. Use sophisticated draping, midi lengths, and luxurious fabrics that age well." },
+    { value: 'Early Teens', system_instruction: "Design a fun, age-appropriate dress. Modest hemlines, playful but tasteful colours — pastels, soft brights. Simple A-line or skater silhouettes." },
+    { value: '16+', system_instruction: "Design a youthful, stylish dress for a 16–19 year old. Mini to midi lengths, fresh modern colours — dusty rose, cream, sky blue, soft lilac. Trendy but wearable." },
+    { value: '20s', system_instruction: "Design a versatile, fashion-forward dress for a woman in her 20s. Sleek silhouettes, neutral or muted tones with one statement element." },
+    { value: '30s', system_instruction: "Design a refined dress for a woman in her 30s. Midi lengths, structured fabric. Sophisticated palette: camel, rust, forest green, navy." },
+    { value: '40+', system_instruction: "Design an elegant, timeless dress for a woman 40+. Midi to maxi lengths, luxurious draping. Understated palette — cream, dusty rose, deep teal, charcoal." },
   ],
   materials: [
     { value: 'Viscose', system_instruction: "Use for 'Fluid Textures'. Design dresses with soft drapes and resort-wear flow." },
@@ -62,10 +62,10 @@ export const handler = async (event) => {
 
     if (!occ || !age) return jsonResponse(400, { error: 'Invalid occasion or age range' });
 
-    const prompt = `Fashion design sketch illustration. White background. Full-length dress drawn from head to hem, centred in the frame with generous white space on all sides.
-Style: editorial pencil and soft watercolour wash.
+    const prompt = `Fashion illustration in a clean, editorial style. White background. Full-length dress centred in frame with generous padding on all sides — nothing cropped.
+Style: realistic pencil sketch with tasteful watercolour wash. Wearable, real-world fashion — not fantasy, not costume, not cartoonish.
 Design: a ${silhouette} dress. ${occ.system_instruction} ${age.system_instruction}${mat ? ` ${mat.system_instruction}` : ''}
-Rules: Show ONLY the dress — no background, no other clothing pieces. The complete dress must be fully visible within the canvas, nothing cropped.`;
+Rules: single dress only, complete and visible. Tasteful, cohesive colour palette. No clashing patterns, no exaggerated proportions, no unrealistic design elements.`;
 
     const ai = new GoogleGenAI({ apiKey });
 

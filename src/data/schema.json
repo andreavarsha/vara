@@ -2,67 +2,67 @@
   "occasions": [
     {
       "value": "Casual",
-      "system_instruction": "Focus on 'Lightweight Structure' and 'Quiet Luxury'. Use organic cotton poplins or linens for breathable, clean silhouettes like the midi wrap or shift dress."
+      "system_instruction": "Design a relaxed yet polished everyday dress. Clean silhouettes in neutral or earthy tones."
     },
     {
       "value": "Date Night",
-      "system_instruction": "Apply the '90s Redux' and 'Romantic Sensuality' trends. Prioritize open backs, plunging necklines, and tactile fabrics like satin or lace."
+      "system_instruction": "Design a sophisticated evening dress in deep jewel tones. Elegant and wearable."
     },
     {
       "value": "Vintage",
-      "system_instruction": "Blend 20s/30s 'Retro-Fit Florals' with 80s 'Exaggerated Proportions'. Think lace-trimmed slip dresses or dresses with bubble hems and puff sleeves."
+      "system_instruction": "Design a vintage-inspired dress that feels nostalgic but wearable today."
     },
     {
       "value": "Girls Night",
-      "system_instruction": "Execute 'Maximalist Energy' and 'Bold Block Colours'. Focus on high-visibility dresses: bodycon styles, metallic sheens, or vibrant 'Primary Palettes'."
+      "system_instruction": "Design a chic night-out dress. Solid jewel tones or subtle metallic finishes. Wearable and stylish."
     }
   ],
   "age_ranges": [
     {
       "value": "Early Teens",
-      "system_instruction": "Focus on 'Whimsical Volume' and 'Sporty References'. Use playful bubble hems, tiered ruffles, and oversized, comfy silhouettes."
+      "system_instruction": "Fun, age-appropriate dress. Modest hemlines, tasteful colours, simple silhouettes."
     },
     {
-      "value": "Late Teens",
-      "system_instruction": "Prioritize 'Expressive Patterns' and 'Y2K Revival'. Design with bold dots, 'Little House on the Prairie' ditsy florals, and daring cut-outs."
+      "value": "16+",
+      "system_instruction": "Youthful, stylish dress for a 16-19 year old. Mini to midi lengths, fresh modern colours. Trendy but wearable."
     },
     {
       "value": "20s",
-      "system_instruction": "Blend 'Minimalist Sophistication' with 'Modern Flare'. Focus on versatile day-to-night slip dresses and sleek column silhouettes."
+      "system_instruction": "Versatile, fashion-forward dress. Sleek silhouettes, neutral or muted tones."
     },
     {
       "value": "30s",
-      "system_instruction": "Focus on 'Timeless Leadership' and 'Material Honesty'. Prioritize high-quality tailoring, structured cottons, and refined geometric necklines."
+      "system_instruction": "Refined, confident dress. Midi lengths, structured fabric. Sophisticated colour palette."
     },
     {
       "value": "40+",
-      "system_instruction": "Master 'Quiet Luxury' and 'Refined Elegance'. Use sophisticated draping, midi lengths, and luxurious fabrics that age well."
+      "system_instruction": "Elegant, timeless dress. Midi to maxi lengths, luxurious draping. Understated palette."
     }
   ],
   "materials": [
     {
       "value": "Viscose",
-      "system_instruction": "Use for 'Fluid Textures'. Design dresses with soft drapes and resort-wear flow."
+      "system_instruction": "Fluid textures, soft drapes and resort-wear flow."
     },
     {
       "value": "Cotton",
-      "system_instruction": "Use 'Lightweight Structured Cotton' (Poplin/Voile) for architectural but breathable dresses."
+      "system_instruction": "Lightweight structured cotton for architectural but breathable dresses."
     },
     {
       "value": "Linen",
-      "system_instruction": "The 'Climate-Conscious Hero'. Use for rustic, honest textures in A-line or wrap styles."
+      "system_instruction": "Rustic, honest textures in A-line or wrap styles."
     },
     {
       "value": "Lace",
-      "system_instruction": "Apply as 'Romantic Excellence'. Use for sheer overlays, statement panels, or delicate trims."
+      "system_instruction": "Sheer overlays, statement panels, or delicate trims."
     },
     {
       "value": "Denim",
-      "system_instruction": "Focus on 'Sophisticated Denim Tailoring'. Use dark indigo or raw 'Brut' denim for structured, polished dresses."
+      "system_instruction": "Dark indigo or structured denim for polished dresses."
     },
     {
       "value": "Satin",
-      "system_instruction": "Focus on 'Liquid Shine'. Best for vintage-inspired slip dresses and evening glam."
+      "system_instruction": "Liquid shine. Best for slip dresses and evening glam."
     }
   ],
   "silhouettes": [

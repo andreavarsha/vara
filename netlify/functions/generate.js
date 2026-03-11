@@ -4,17 +4,17 @@ import { getStore } from '@netlify/blobs';
 
 const SCHEMA = {
   occasions: [
-    { value: 'Casual', system_instruction: "Focus on 'Lightweight Structure' and 'Quiet Luxury'. Use organic cotton poplins or linens for breathable, clean silhouettes like the midi wrap or shift dress." },
-    { value: 'Date Night', system_instruction: "Apply the '90s Redux' and 'Romantic Sensuality' trends. Prioritize open backs, plunging necklines, and tactile fabrics like satin or lace." },
-    { value: 'Vintage', system_instruction: "Blend 20s/30s 'Retro-Fit Florals' with 80s 'Exaggerated Proportions'. Think lace-trimmed slip dresses or dresses with bubble hems and puff sleeves." },
-    { value: 'Girls Night', system_instruction: "Execute 'Maximalist Energy' and 'Bold Block Colours'. Focus on high-visibility dresses: bodycon styles, metallic sheens, or vibrant 'Primary Palettes'." },
+    { value: 'Casual', system_instruction: "Design a relaxed yet polished everyday dress. Think clean silhouettes in neutral or earthy tones — ivory, sand, sage, warm grey. Breathable fabrics, minimal detailing. The dress should look effortlessly put-together, not costumey." },
+    { value: 'Date Night', system_instruction: "Design a sophisticated, sensual evening dress. Think satin, lace or structured crepe in deep jewel tones — burgundy, midnight navy, champagne, or classic black. Open backs, delicate straps, or a subtle slit are welcome. Elegant and wearable." },
+    { value: 'Vintage', system_instruction: "Design a vintage-inspired dress that feels nostalgic but wearable today. Think 1970s wrap silhouettes, 1950s full skirts, or 1960s shift dresses. Soft florals, polka dots on neutral bases, or warm earthy tones. Nothing costume-like." },
+    { value: 'Girls Night', system_instruction: "Design a chic, confidence-boosting night-out dress that women would actually want to wear. Think fitted bodycon or mini lengths in satin, velvet or sequin fabric. Solid jewel tones — emerald, deep red, cobalt, champagne — or subtle metallic finishes. Clean silhouette, tasteful neckline. NOT loud prints, NOT multiple clashing colours, NOT fantasy or maximalist patterns." },
   ],
   age_ranges: [
-    { value: 'Early Teens', system_instruction: "Focus on 'Whimsical Volume' and 'Sporty References'. Use playful bubble hems, tiered ruffles, and oversized, comfy silhouettes." },
-    { value: 'Late Teens', system_instruction: "Prioritize 'Expressive Patterns' and 'Y2K Revival'. Design with bold dots, 'Little House on the Prairie' ditsy florals, and daring cut-outs." },
-    { value: '20s', system_instruction: "Blend 'Minimalist Sophistication' with 'Modern Flare'. Focus on versatile day-to-night slip dresses and sleek column silhouettes." },
-    { value: '30s', system_instruction: "Focus on 'Timeless Leadership' and 'Material Honesty'. Prioritize high-quality tailoring, structured cottons, and refined geometric necklines." },
-    { value: '40+', system_instruction: "Master 'Quiet Luxury' and 'Refined Elegance'. Use sophisticated draping, midi lengths, and luxurious fabrics that age well." },
+    { value: 'Early Teens', system_instruction: "Design a fun, age-appropriate dress for a young teenager. Modest hemlines at or below the knee, playful but tasteful colours — pastels, soft brights. Simple silhouettes like A-line or skater. Nothing revealing." },
+    { value: '16+', system_instruction: "Design a youthful, stylish dress for a 16–19 year old. Mini to midi lengths are fine. Fresh, modern colours — dusty rose, cream, sky blue, soft lilac. Clean lines with one fun detail like a ruffle hem or bow tie. Trendy but wearable, not revealing." },
+    { value: '20s', system_instruction: "Design a versatile, fashion-forward dress for a woman in her 20s. Sleek silhouettes that work for multiple occasions. Neutral or muted tones with one statement element. Contemporary and polished." },
+    { value: '30s', system_instruction: "Design a refined, confident dress for a woman in her 30s. High-quality feel — structured cotton, silk or crepe. Midi lengths, geometric or wrap necklines. Sophisticated colour palette: camel, rust, forest green, navy." },
+    { value: '40+', system_instruction: "Design an elegant, timeless dress for a woman 40+. Midi to maxi lengths, luxurious draping, quality fabrics. Understated, refined colour palette — cream, dusty rose, deep teal, charcoal. Sophisticated without being conservative." },
   ],
   materials: [
     { value: 'Viscose', system_instruction: "Use for 'Fluid Textures'. Design dresses with soft drapes and resort-wear flow." },

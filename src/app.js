@@ -112,8 +112,13 @@ function renderCards(container, cards, occasion, state) {
 
   container.innerHTML = `
     <div class="layout">
-    <h2 class="serif cards-results-header">Your 2026 Designs Are Ready</h2>
-    <p class="cards-results-subhead">For: ${occasion}</p>
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+      <button class="btn btn-secondary" id="backBtn" style="padding:0.5rem 1.25rem; font-size:0.85rem;">← Back</button>
+      <div>
+        <h2 class="serif cards-results-header" style="margin:0;">Your 2026 Designs Are Ready</h2>
+        <p class="cards-results-subhead" style="margin:0.2rem 0 0;">For: ${occasion}</p>
+      </div>
+    </div>
     ${/* imageGenFailed banner removed — placeholder cards are self-explanatory */ ''}
     <div class="cards-grid" id="cardsGrid"></div>
     ${state.limitReached ? `
@@ -186,6 +191,9 @@ function renderCards(container, cards, occasion, state) {
 
   const againBtn = container.querySelector('#generateAgain');
   if (againBtn) againBtn.addEventListener('click', () => state.onGenerate?.());
+
+  const backBtn = container.querySelector('#backBtn');
+  if (backBtn) backBtn.addEventListener('click', () => state.onBack?.());
 }
 
 function renderAccountGateModal(container, trigger, state) {
@@ -289,6 +297,7 @@ export function initApp() {
 
       renderCards(main, state.cards, state.occasion, state);
       state.onGenerate = doGenerate;
+      state.onBack = showForm;
       state.onHeartClick = handleHeartClick;
     } catch (err) {
       renderError(
