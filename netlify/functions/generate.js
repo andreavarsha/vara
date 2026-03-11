@@ -64,13 +64,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-function getUserIdFromContext(event, context) {
+function getUserFromContext(event, context) {
   try {
     const raw = context?.clientContext?.custom?.netlify;
     if (!raw) return null;
     const decoded = Buffer.from(raw, 'base64').toString('utf-8');
     const { user } = JSON.parse(decoded);
-    return user?.id || user?.sub;
+    return user ? { id: user.id || user.sub, email: user.email } : null;
   } catch {
     return null;
   }
@@ -102,9 +102,13 @@ export const handler = async (event, context) => {
       return jsonResponse(400, { error: 'Invalid JSON' });
     }
 
-    const serverUserId = getUserIdFromContext(event, context);
+    const serverUser = getUserFromContext(event, context);
     const { occasion, ageRange, material, guestId, userId: bodyUserId } = body;
-    const userId = serverUserId || bodyUserId;
+    const userId = serverUser?.id || bodyUserId;
+    const userEmail = serverUser?.email;
+    const ADMIN_EMAILS = ['varsha.francisco@gmail.com'];
+    const isAdmin = ADMIN_EMAILS.includes(userEmail);
+
     if (!occasion || !ageRange) {
       return jsonResponse(400, { error: 'Occasion and age range are required' });
     }
@@ -129,7 +133,7 @@ export const handler = async (event, context) => {
       userData = { count: 0, savedCards: [] };
     }
 
-    const maxGen = userId ? 3 : 1;
+    const maxGen = isAdmin ? Infinity : userId ? 3 : 1;
     if (userData.count >= maxGen) {
       return jsonResponse(429, { error: 'Trial limit reached', limitReached: true, isGuest: !userId });
     }
