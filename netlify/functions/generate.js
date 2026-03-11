@@ -27,8 +27,8 @@ const SCHEMA = {
   silhouettes: ['A-Line', 'Wrap', 'Column', 'Slip Dress', 'Bubble Hem', 'Midi Flare', 'Shirt Dress'],
 };
 
-const IMAGE_MODEL = 'gemini-2.0-flash-exp';
-const TEXT_MODEL = 'gemini-2.0-flash-lite';
+const IMAGE_MODEL = 'gemini-3.1-flash-image-preview';
+const TEXT_MODEL = 'gemini-3.1-flash-lite';
 
 function pick5Silhouettes(occasion, ageRange) {
   const all = [...SCHEMA.silhouettes];
