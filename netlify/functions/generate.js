@@ -27,8 +27,8 @@ const SCHEMA = {
   silhouettes: ['A-Line', 'Wrap', 'Column', 'Slip Dress', 'Bubble Hem', 'Midi Flare', 'Shirt Dress'],
 };
 
-const IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation';
-const TEXT_MODEL = 'gemini-2.0-flash';
+const IMAGE_MODEL = 'imagen-3.0-generate-002';
+const TEXT_MODEL = 'gemini-1.5-flash';
 
 function pick5Silhouettes(occasion, ageRange) {
   const all = [...SCHEMA.silhouettes];
@@ -196,21 +196,21 @@ Return a JSON array of 5 objects: [{ "silhouette": "...", "styleAnalysis": "..."
 
 
 
-  // Generate all 5 images in parallel to avoid function timeout
+  // Generate all 5 images in parallel
   const imageResults = await Promise.allSettled(
     silhouettes.map((sil) => {
       const prompt = buildImagePrompt(sil, occ.system_instruction, age.system_instruction, mat?.system_instruction);
-      return ai.models.generateContent({
+      return ai.models.generateImages({
         model: IMAGE_MODEL,
-        contents: prompt,
-        config: { responseModalities: ['text', 'image'] },
+        prompt,
+        config: { numberOfImages: 1, outputMimeType: 'image/jpeg' },
       }).then((resp) => {
-        const parts = resp?.candidates?.[0]?.content?.parts || [];
-        const imgPart = parts.find((p) => p.inlineData?.data);
-        if (imgPart) {
-          return { silhouette: sil, base64: imgPart.inlineData.data, mimeType: imgPart.inlineData.mimeType || 'image/jpeg' };
+        const imgBytes = resp?.generatedImages?.[0]?.image?.imageBytes;
+        if (imgBytes) {
+          return { silhouette: sil, base64: imgBytes, mimeType: 'image/jpeg' };
         }
-        console.warn(`Image for ${sil}: no image data in response`);
+        const reason = resp?.generatedImages?.[0]?.raiFilteredReason;
+        console.warn(`Image for ${sil}: no image bytes returned. Reason: ${reason}`);
         return { silhouette: sil, base64: null, error: true };
       });
     })
@@ -254,7 +254,7 @@ Return a JSON array of 5 objects: [{ "silhouette": "...", "styleAnalysis": "..."
       cards,
       imageGenFailed,
       generationCount: userData.count,
-      limitReached: userData.count >= maxGen,
+      limitReached: false,
     });
   } catch (err) {
     console.error('Generate function error:', err);
